@@ -2,6 +2,8 @@
 
 get.listing <- function(listing_id) {
   
+  require(jsonlite)
+  
   # Address
   x_link <- paste0("https://openapi.etsy.com/v2/listings/",
                  listing_id,
@@ -40,10 +42,11 @@ get.listing <- function(listing_id) {
 }
 
 
+# search.listings ---------------------------------------------------------
 
-# get.listings ------------------------------------------------------------
-
-get.listings <- function(search_key, min_price = 0, max_price = 50, limit = 100) {
+search.listings <- function(search_key, min_price = 0, max_price = 50, limit = 100) {
+  
+  require(jsonlite)
   
   # Address
   x_link <- paste0("https://openapi.etsy.com/v2/listings/active?api_key=",
@@ -92,6 +95,8 @@ get.listings <- function(search_key, min_price = 0, max_price = 50, limit = 100)
 
 get.user.profile <- function(user_id) {
   
+  require(jsonlite)
+  
   # Address
   x_link1 <- paste0("https://openapi.etsy.com/v2/users/",
                     user_id,
@@ -127,6 +132,8 @@ get.user.profile <- function(user_id) {
 # get.user.shops ----------------------------------------------------------
 
 get.user.shops <- function(user_id) {
+  
+  require(jsonlite)
   
   # Address
   x_link <- paste0("https://openapi.etsy.com/v2/users/",
