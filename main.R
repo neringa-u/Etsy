@@ -1,13 +1,11 @@
 library(magrittr)
+library(dplyr)
 
-list_id <- 734801183
-api_key <- read.delim(file.choose(), header = F) %>% 
-  unlist %>% as.character
-list_data <-
-  jsonlite::fromJSON(paste0(
-    "https://openapi.etsy.com/v2/listings/",
-    list_id,
-    "?api_key=",
-    api_key
-  ))
+api_key <- read.csv("api_key.txt", header = F) %>% unlist()
+listing_id <- 734801183
 
+# test 
+library("lubridate")
+as_datetime(1602639304)   
+as.POSIXct(1602639304, origin = "1970-01-01")
+(Sys.time() - as_datetime(1602639304)) %>% as.numeric()
