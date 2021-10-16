@@ -3,6 +3,7 @@
 get.listing <- function(listing_id) {
   
   require(jsonlite)
+  require(lubridate)
   
   # Address
   x_link <- paste0("https://openapi.etsy.com/v2/listings/",
@@ -22,7 +23,8 @@ get.listing <- function(listing_id) {
            description,
            price,
            currency_code,
-           creation_tsz,
+           original_creation_tsz,
+           last_modified_tsz,
            tags,
            materials,
            featured_rank,
@@ -36,17 +38,21 @@ get.listing <- function(listing_id) {
     ) %>% 
     as_tibble()
   
+  # Transform time
+  x %<>% mutate_at(vars(contains("_tsz")), ~as_datetime(.))
+  
   # Return results
   return(x)
   
 }
 
 
-# search.listings ---------------------------------------------------------
+# get.listings ------------------------------------------------------------
 
-search.listings <- function(search_key, min_price = 0, max_price = 50, limit = 100) {
+get.listings <- function(search_key, min_price = 0, max_price = 50, limit = 100) {
   
   require(jsonlite)
+  require(lubridate)
   
   # Address
   x_link <- paste0("https://openapi.etsy.com/v2/listings/active?api_key=",
@@ -72,7 +78,8 @@ search.listings <- function(search_key, min_price = 0, max_price = 50, limit = 1
            description,
            price,
            currency_code,
-           creation_tsz,
+           original_creation_tsz,
+           last_modified_tsz,
            tags,
            materials,
            featured_rank,
@@ -85,6 +92,9 @@ search.listings <- function(search_key, min_price = 0, max_price = 50, limit = 1
            is_vintage
     ) %>% 
     as_tibble()
+  
+  # Transform time
+  x %<>% mutate_at(vars(contains("_tsz")), ~as_datetime(.))
   
   # Return results
   return(x)
@@ -157,5 +167,60 @@ get.user.shops <- function(user_id) {
   
 }
 
+
+
+# search.listings.id ------------------------------------------------------
+
+search.listings.id <- function(search_key, min_price = 0, max_price = 50, start_page = 1, end_page = 10) {
+  
+  require(RSelenium)
+  
+  # Address
+  x_link <- paste0("https://www.etsy.com/search?q=",
+                   gsub(" ", "+", search_key),
+                   "&min=", 
+                   min_price,
+                   "&max=", 
+                   max_price,
+                   "&order=most_relevant",
+                   "&page=")
+  
+  # Initialize session
+  rD <- rsDriver(
+    port = 4586L,
+    browser = "chrome",
+    chromever = "92.0.4515.107"
+  )
+  remDr <- rD[["client"]] 
+  
+  # Get id in all pages
+  x <- map(start_page:end_page, function(i) {
+    
+    remDr$navigate(paste0(x_link, i))
+    Sys.sleep(runif(1, max = 3))
+    remDr$findElements(using = "css selector", "[data-appears-component-name='search2_organic_listings_group']") %>% 
+      map_chr(function(x_tmp) {
+    
+        x_tmp$getElementAttribute("data-appears-event-data") %>% 
+          str_extract_all("[0-9]+") %>% 
+          `[[`(1) %>% 
+          `[`(2) 
+        
+      }) 
+    }) %>% 
+    flatten_chr() %>% 
+    enframe("rank", "id") %>% 
+    mutate(rank = rank + (start_page - 1) * 48)
+  
+  # Close connection
+  remDr$close()
+  rD$server$stop()
+  rm(rD, remDr)
+  gc()
+  system("taskkill /im java.exe /f", intern = FALSE, ignore.stdout = FALSE)
+  
+  # Return output
+  return(x)
+}
 
 
